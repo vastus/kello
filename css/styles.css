@@ -14,3 +14,7 @@ body {
   display: inline;
 }
 
+.blink {
+  text-decoration: blink;
+}
+

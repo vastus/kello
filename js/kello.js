@@ -5,12 +5,12 @@
 
   Kello = (function() {
 
-    function Kello() {
+    function Kello(hours, mins, secs) {
       this.date = new Date();
       this.start = this.date.getTime();
-      this.hours = 0;
-      this.mins = 0;
-      this.secs = 0;
+      this.hours = hours || 0;
+      this.mins = mins || 0;
+      this.secs = secs || 0;
       this.times = ['hours', 'mins', 'secs'];
       this.kaynnista();
     }
@@ -59,6 +59,10 @@
       var erotus;
       erotus = new Date().getTime() - this.start;
       return new Date(erotus);
+    };
+
+    Kello.prototype.setTime = function(hours, mins, secs) {
+      return this.start -= 1000 * ((hours * 60 * 60) + (mins * 60) + secs);
     };
 
     return Kello;
@@ -128,10 +132,12 @@
   logic = new Logic();
 
   jQuery(function() {
-    var adjust, adjustTimeout, changeMode, changeState, clock, enterBtn, mode, modeBtn, runClock, setStatus, start, updateClockProperty, updateHours, updateMins, updateSecs;
+    var adjust, adjustTimeout, blinkToggle, changeMode, changeState, clock, decrement, downBtn, enterBtn, increment, mode, modeBtn, setStatus, start, toggleElems, upBtn, updateClockProperty, updateHours, updateMins, updateSecs;
     mode = $('#mode');
     modeBtn = $('#modeBtn');
     enterBtn = $('#enterBtn');
+    upBtn = $('#upBtn');
+    downBtn = $('#downBtn');
     start = 0;
     adjustTimeout = setTimeout;
     clock = {
@@ -154,6 +160,13 @@
         prev: 0,
         elem: $('#secs')
       },
+      elems: [$('#hours'), $('#mins'), $('#secs')],
+      selectedElem: 0,
+      run: function() {
+        updateSecs();
+        updateMins();
+        return updateHours();
+      },
       freeze: function() {
         var interval, intervals, _i, _len, _results;
         intervals = [this.secs.interval, this.mins.interval, this.hours.interval];
@@ -164,7 +177,10 @@
         }
         return _results;
       },
-      resume: function() {}
+      reset: function() {
+        kello = new Kello();
+        return this.run();
+      }
     };
     setStatus = function(opt) {
       if (opt) {
@@ -206,6 +222,37 @@
         return changeState('normal');
       }
     });
+    modeBtn.click(function() {
+      if (logic.curMode('clock') && logic.curState('adjust')) {
+        clock.freeze();
+        clock.selectedElem = toggleElems(clock.elems);
+        return blinkToggle(clock.selectedElem);
+      }
+    });
+    upBtn.click(function() {
+      console.log('click');
+      if (logic.curMode('clock') && logic.curState('adjust')) {
+        return increment(clock.selectedElem);
+      }
+    });
+    downBtn.click(function() {
+      console.log('click');
+      if (logic.curMode('clock') && logic.curState('adjust')) {
+        return decrement(clock.selectedElem);
+      }
+    });
+    increment = function(elem) {
+      var num;
+      console.log("cur: " + elem.html());
+      num = parseInt(elem.html());
+      return elem.html(num + 1);
+    };
+    decrement = function(elem) {
+      var num;
+      console.log("cur: " + elem.html());
+      num = parseInt(elem.html());
+      return elem.html(num - 1);
+    };
     updateClockProperty = function(property, elem) {
       return clock[property].interval = setInterval((function() {
         var num;
@@ -223,19 +270,17 @@
     updateSecs = function() {
       return updateClockProperty('secs');
     };
-    runClock = function() {
-      updateSecs();
-      updateMins();
-      return updateHours();
+    toggleElems = function(elems) {
+      var elem;
+      elem = elems.shift();
+      elems.push(elem);
+      return elem;
+    };
+    blinkToggle = function(elem) {
+      return elem.toggleClass('blink');
     };
     setStatus();
-    runClock();
-    setTimeout((function() {
-      return clock.freeze();
-    }), 6000);
-    return setTimeout((function() {
-      return clock.resume();
-    }), 12000);
+    return clock.run();
   });
 
 }).call(this);

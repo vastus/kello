@@ -1,11 +1,11 @@
 class Kello
   
-  constructor: ->
+  constructor: (hours, mins, secs) ->
     @date  = new Date()
     @start = @date.getTime()
-    @hours = 0
-    @mins  = 0
-    @secs  = 0
+    @hours = hours || 0
+    @mins  = mins  || 0
+    @secs  = secs  || 0
     @times = ['hours', 'mins', 'secs']
     @kaynnista()
 
@@ -39,6 +39,9 @@ class Kello
   getDate: ->
     erotus = new Date().getTime() - @start
     return new Date(erotus)
+
+  setTime: (hours, mins, secs) ->
+    @start -= 1000*((hours * 60 * 60) + (mins * 60) + (secs))
 
 # -- /Kello
 
@@ -96,6 +99,8 @@ jQuery ->
   # control buttons
   modeBtn  = $('#modeBtn')
   enterBtn = $('#enterBtn')
+  upBtn    = $('#upBtn')
+  downBtn  = $('#downBtn')
 
   # local vars
   start = 0
@@ -118,11 +123,18 @@ jQuery ->
       updateValue: 1000
       prev: 0
       elem: $('#secs')
+    elems: [$('#hours'), $('#mins'), $('#secs')]
+    selectedElem: 0
+    run: ->
+      updateSecs()
+      updateMins()
+      updateHours()
     freeze: ->
       intervals = [this.secs.interval, this.mins.interval, this.hours.interval]
       clearInterval(interval) for interval in intervals
-    resume: ->
-      
+    reset: ->
+      kello = new Kello()
+      this.run()
 
   # display the mode
   setStatus = (opt) ->
@@ -166,6 +178,33 @@ jQuery ->
     if logic.curState('adjust')
       changeState('normal')
 
+  # adjusting clock time
+  modeBtn.click ->
+    if logic.curMode('clock') and logic.curState('adjust')
+      clock.freeze()
+      clock.selectedElem = toggleElems(clock.elems)
+      blinkToggle(clock.selectedElem)
+
+  upBtn.click ->
+    console.log('click')
+    if logic.curMode('clock') and logic.curState('adjust')
+      increment(clock.selectedElem)
+
+  downBtn.click ->
+    console.log('click')
+    if logic.curMode('clock') and logic.curState('adjust')
+      decrement(clock.selectedElem)
+
+  increment = (elem) ->
+    console.log("cur: " + elem.html())
+    num = parseInt(elem.html())
+    elem.html(num + 1)
+
+  decrement = (elem) ->
+    console.log("cur: " + elem.html())
+    num = parseInt(elem.html())
+    elem.html(num - 1)
+
   updateClockProperty = (property, elem) ->
     clock[property].interval = setInterval (->
       num = kello.get(property)
@@ -182,21 +221,15 @@ jQuery ->
   updateSecs = ->
     updateClockProperty('secs')
 
-  runClock = ->
-    updateSecs()
-    updateMins()
-    updateHours()
+  toggleElems = (elems) ->
+    elem = elems.shift()
+    elems.push(elem)
+    return elem
 
+  blinkToggle = (elem) ->
+    elem.toggleClass('blink')
 
   # do this after that
   setStatus()
-  runClock()
-
-  setTimeout (->
-    clock.freeze()
-  ), 6000
-
-  setTimeout (->
-    clock.resume()
-  ), 12000
+  clock.run()
 
